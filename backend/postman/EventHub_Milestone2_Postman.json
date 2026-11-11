@@ -1,0 +1,899 @@
+{
+  "info": {
+    "name": "EventHub API — Milestone 2",
+    "_postman_id": "eventhub-milestone-2",
+    "description": "EventHub Backend API — Sistem Pendaftaran Event & Seminar Kampus\nMilestone 2: Backend API & Keamanan Sisi Server\n\nSetup:\n1. Base URL: http://localhost:8080 (ubah di variable if sesuai)\n2. Import ini, lalu jalankan request berurutan.\n3. Login admin & participant untuk dapat token (variable admin_token / participant_token otomatis diisi).",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "base_url", "value": "http://localhost:8080", "type": "string" },
+    { "key": "admin_token", "value": "", "type": "string" },
+    { "key": "participant_token", "value": "", "type": "string" },
+    { "key": "event_id", "value": "1", "type": "string" },
+    { "key": "registration_id", "value": "1", "type": "string" }
+  ],
+  "event": [
+    {
+      "listen": "prerequest",
+      "script": {
+        "type": "text/javascript",
+        "exec": []
+      }
+    }
+  ],
+  "item": [
+    {
+      "name": "01 - Auth",
+      "item": [
+        {
+          "name": "Register - Sukses (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Peserta Baru\",\n  \"email\": \"peserta.test@student.ac.id\",\n  \"password\": \"password123\",\n  \"role\": \"participant\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "POST /api/auth/register — sukses 201, kembalikan user + JWT token."
+          },
+          "response": [
+            {
+              "name": "Success 201",
+              "code": 201,
+              "status": "Created",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registration successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": 5,\n      \"name\": \"Test Peserta Baru\",\n      \"email\": \"peserta.test@student.ac.id\",\n      \"role\": \"participant\",\n      \"created_at\": \"2026-01-01 10:00:00\",\n      \"updated_at\": \"2026-01-01 10:00:00\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Register - Duplikat Email (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"Test Peserta Baru\",\n  \"email\": \"peserta.test@student.ac.id\",\n  \"password\": \"password123\",\n  \"role\": \"participant\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "POST /api/auth/register — email sudah dipakai, 400 Bad Request."
+          },
+          "response": [
+            {
+              "name": "Error 400",
+              "code": 400,
+              "status": "Bad Request",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Email already registered\",\n  \"data\": null,\n  \"errors\": {\n    \"email\": \"This email is already taken.\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Register - Validasi Gagal (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"name\": \"A\",\n  \"email\": \"bukan-email\",\n  \"password\": \"123\",\n  \"role\": \"admin\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "register"]
+            },
+            "description": "POST /api/auth/register — input invalid, 422 Unprocessable Entity."
+          },
+          "response": [
+            {
+              "name": "Error 422",
+              "code": 422,
+              "status": "Unprocessable Entity",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"data\": null,\n  \"errors\": {\n    \"name\": \"The name field is required.\",\n    \"email\": \"The email must be a valid email address.\",\n    \"password\": \"The password must be at least 6 characters.\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Login Admin - Sukses (200) & Set token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 200 && body.success) {",
+                  "  pm.collectionVariables.set('admin_token', body.data.token);",
+                  "  console.log('Admin token tersimpan');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@eventhub.ac.id\",\n  \"password\": \"admin123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "POST /api/auth/login — admin login, token otomatis disimpan ke admin_token."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": 1,\n      \"name\": \"Bagas Admin\",\n      \"email\": \"admin@eventhub.ac.id\",\n      \"role\": \"admin\",\n      \"created_at\": \"2026-01-01 10:00:00\",\n      \"updated_at\": \"2026-01-01 10:00:00\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Login Participant - Sukses (200) & Set token",
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "type": "text/javascript",
+                "exec": [
+                  "const body = pm.response.json();",
+                  "if (pm.response.code === 200 && body.success) {",
+                  "  pm.collectionVariables.set('participant_token', body.data.token);",
+                  "  console.log('Participant token tersimpan');",
+                  "}"
+                ]
+              }
+            }
+          ],
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"abyan@student.ac.id\",\n  \"password\": \"participant123\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "POST /api/auth/login — participant login, token disimpan ke participant_token."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Login successful\",\n  \"data\": {\n    \"user\": {\n      \"id\": 2,\n      \"name\": \"Muhammad Abyan\",\n      \"email\": \"abyan@student.ac.id\",\n      \"role\": \"participant\",\n      \"created_at\": \"2026-01-01 10:00:00\",\n      \"updated_at\": \"2026-01-01 10:00:00\"\n    },\n    \"token\": \"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...\"\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Login - Salah Kredensial (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"email\": \"admin@eventhub.ac.id\",\n  \"password\": \"salahpassword\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/auth/login",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "login"]
+            },
+            "description": "POST /api/auth/login — password salah, 401 Unauthorized."
+          },
+          "response": [
+            {
+              "name": "Error 401",
+              "code": 401,
+              "status": "Unauthorized",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Invalid email or password\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Me - Sukses (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "GET /api/auth/me — privat, perlu JWT. 200 sukses."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"User profile\",\n  \"data\": {\n    \"id\": 2,\n    \"name\": \"Muhammad Abyan\",\n    \"email\": \"abyan@student.ac.id\",\n    \"role\": \"participant\",\n    \"created_at\": \"2026-01-01 10:00:00\",\n    \"updated_at\": \"2026-01-01 10:00:00\"\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Me - Tanpa Token (401)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/auth/me",
+              "host": ["{{base_url}}"],
+              "path": ["api", "auth", "me"]
+            },
+            "description": "GET /api/auth/me — tanpa Authorization header, 401."
+          },
+          "response": [
+            {
+              "name": "Error 401",
+              "code": 401,
+              "status": "Unauthorized",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": false,\n  \"message\": \"Authorization token not provided\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "02 - Events",
+      "item": [
+        {
+          "name": "List Events - Sukses (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "description": "GET /api/events — publik, 200."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "header": [
+                { "key": "Content-Type", "value": "application/json; charset=utf-8" }
+              ],
+              "body": "{\n  \"success\": true,\n  \"message\": \"Events retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 1,\n      \"organizer_id\": 1,\n      \"organizer_name\": \"Bagas Admin\",\n      \"title\": \"Workshop Dasar-Dasar Machine Learning dengan Python\",\n      \"description\": \"Workshop intensif 3 jam tentang konsep machine learning...\",\n      \"category\": \"Workshop\",\n      \"event_date\": \"2026-04-15\",\n      \"location\": \"Ruang Lab Komputer FTIR Lt. 3, Universitas XYZ\",\n      \"max_seats\": 40,\n      \"registered_count\": 0,\n      \"poster_url\": null,\n      \"created_at\": \"2026-01-01 10:00:00\",\n      \"updated_at\": \"2026-01-01 10:00:00\"\n    }\n  ],\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "List Events Filter Category - Sukses (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events?category=Seminar",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"],
+              "query": [
+                { "key": "category", "value": "Seminar", "disabled": false }
+              ]
+            },
+            "description": "GET /api/events?category=Seminar — filter kategori."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Events retrieved successfully\",\n  \"data\": [\n    {\n      \"id\": 2,\n      \"category\": \"Seminar\",\n      \"title\": \"Seminar Karir di Era Digital 2026\",\n      \"event_date\": \"2026-04-20\"\n    }\n  ],\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "List Events Invalid Category (400)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events?category=Konser",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"],
+              "query": [
+                { "key": "category", "value": "Konser", "disabled": false }
+              ]
+            },
+            "description": "GET /api/events?category=Konser — kategori tidak valid, 400."
+          },
+          "response": [
+            {
+              "name": "Error 400",
+              "code": 400,
+              "status": "Bad Request",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Invalid category. Must be: Webinar, Workshop, Seminar\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Detail Event - Sukses (200)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "description": "GET /api/events/{id} — publik, 200."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Event detail\",\n  \"data\": {\n    \"id\": 1,\n    \"organizer_id\": 1,\n    \"organizer_name\": \"Bagas Admin\",\n    \"title\": \"Workshop Dasar-Dasar Machine Learning dengan Python\",\n    \"category\": \"Workshop\",\n    \"event_date\": \"2026-04-15\",\n    \"max_seats\": 40,\n    \"registered_count\": 0\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Detail Event - Tidak Ada (404)",
+          "request": {
+            "method": "GET",
+            "header": [],
+            "url": {
+              "raw": "{{base_url}}/api/events/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "99999"]
+            },
+            "description": "GET /api/events/{id} — id tidak ada, 404."
+          },
+          "response": [
+            {
+              "name": "Error 404",
+              "code": 404,
+              "status": "Not Found",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Event not found\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create Event - Admin Sukses (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Workshop React & TypeScript untuk Pemula\",\n  \"description\": \"Workshop hands-on membangun aplikasi web modern dengan React dan TypeScript dari nol.\",\n  \"category\": \"Workshop\",\n  \"event_date\": \"2026-05-10\",\n  \"location\": \"Ruang Lab Komputer FTIR Lt. 2, Universitas XYZ\",\n  \"max_seats\": 30,\n  \"poster_url\": \"https://example.com/poster.jpg\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "description": "POST /api/events — admin only, 201 Created."
+          },
+          "response": [
+            {
+              "name": "Created 201",
+              "code": 201,
+              "status": "Created",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Event created successfully\",\n  \"data\": {\n    \"id\": 4,\n    \"organizer_id\": 1,\n    \"organizer_name\": \"Bagas Admin\",\n    \"title\": \"Workshop React & TypeScript untuk Pemula\",\n    \"category\": \"Workshop\",\n    \"event_date\": \"2026-05-10\",\n    \"location\": \"Ruang Lab Komputer FTIR Lt. 2, Universitas XYZ\",\n    \"max_seats\": 30,\n    \"poster_url\": \"https://example.com/poster.jpg\"\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create Event - Tanpa Token (401)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Event Tanpa Token\",\n  \"description\": \"Test endpoint privat tanpa token.\",\n  \"category\": \"Seminar\",\n  \"event_date\": \"2026-05-15\",\n  \"location\": \"Aula\",\n  \"max_seats\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "description": "POST /api/events — tanpa JWT, 401."
+          },
+          "response": [
+            {
+              "name": "Error 401",
+              "code": 401,
+              "status": "Unauthorized",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Authorization token not provided\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create Event - Participant Ditolak (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Event Peserta Dilarang\",\n  \"description\": \"Participant tidak boleh membuat event.\",\n  \"category\": \"Seminar\",\n  \"event_date\": \"2026-05-15\",\n  \"location\": \"Aula\",\n  \"max_seats\": 50\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "description": "POST /api/events — participant, 403 Forbidden."
+          },
+          "response": [
+            {
+              "name": "Error 403",
+              "code": 403,
+              "status": "Forbidden",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Access denied: insufficient permissions\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Create Event - Validasi Gagal (422)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"A\",\n  \"description\": \"pendek\",\n  \"category\": \"Konser\",\n  \"event_date\": \"2026-01-01\",\n  \"location\": \"\",\n  \"max_seats\": -5\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events"]
+            },
+            "description": "POST /api/events — input invalid, 422."
+          },
+          "response": [
+            {
+              "name": "Error 422",
+              "code": 422,
+              "status": "Unprocessable Entity",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"data\": null,\n  \"errors\": {\n    \"title\": \"The title must be at least 5 characters.\",\n    \"category\": \"The category must be one of: Webinar, Workshop, Seminar.\",\n    \"location\": \"The location field is required.\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update Event - Admin Sukses (200)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Workshop React & TypeScript untuk Pemula (Batch 2)\",\n  \"max_seats\": 45\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "description": "PUT /api/events/{id} — admin only, 200. Update sebagian field."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Event updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"title\": \"Workshop React & TypeScript untuk Pemula (Batch 2)\",\n    \"max_seats\": 45\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update Event - Tidak Ada (404)",
+          "request": {
+            "method": "PUT",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"title\": \"Event Tidak Ada\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/events/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "99999"]
+            },
+            "description": "PUT /api/events/{id} — id tidak ada, 404."
+          },
+          "response": [
+            {
+              "name": "Error 404",
+              "code": 404,
+              "status": "Not Found",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Event not found\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Delete Event - Admin Sukses (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "description": "DELETE /api/events/{id} — admin only, 200. Hati-hati: menghapus event juga menghapus registrations (CASCADE)."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Event deleted successfully\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Delete Event - Participant Ditolak (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}"]
+            },
+            "description": "DELETE /api/events/{id} — participant, 403."
+          },
+          "response": [
+            {
+              "name": "Error 403",
+              "code": 403,
+              "status": "Forbidden",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Access denied: insufficient permissions\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "03 - Registrations",
+      "item": [
+        {
+          "name": "Register Event - Participant Sukses (201)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "register"]
+            },
+            "description": "POST /api/events/{id}/register — participant, 201. Cek kuota & anti duplikat."
+          },
+          "response": [
+            {
+              "name": "Created 201",
+              "code": 201,
+              "status": "Created",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registered successfully\",\n  \"data\": {\n    \"registration_id\": 1,\n    \"event_id\": 1,\n    \"status\": \"registered\",\n    \"spots_remaining\": 39\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Register Event - Sudah Terdaftar (400)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "register"]
+            },
+            "description": "POST /api/events/{id}/register — duplikat, 400."
+          },
+          "response": [
+            {
+              "name": "Error 400",
+              "code": 400,
+              "status": "Bad Request",
+              "body": "{\n  \"success\": false,\n  \"message\": \"You are already registered for this event\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Register Event - Event Tidak Ada (404)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/99999/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "99999", "register"]
+            },
+            "description": "POST /api/events/{id}/register — event tidak ada, 404."
+          },
+          "response": [
+            {
+              "name": "Error 404",
+              "code": 404,
+              "status": "Not Found",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Event not found\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Register Event - Admin Ditolak (403)",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/register",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "register"]
+            },
+            "description": "POST /api/events/{id}/register — admin tidak boleh daftar sebagai participant, 403."
+          },
+          "response": [
+            {
+              "name": "Error 403",
+              "code": 403,
+              "status": "Forbidden",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Only participants can register for events\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "List Participants - Admin Sukses (200)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/participants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "participants"]
+            },
+            "description": "GET /api/events/{id}/participants — admin only, 200."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Participants retrieved\",\n  \"data\": {\n    \"event\": {\n      \"id\": 1,\n      \"title\": \"Workshop Dasar-Dasar Machine Learning dengan Python\"\n    },\n    \"total_registered\": 1,\n    \"max_seats\": 40,\n    \"participants\": [\n      {\n        \"id\": 1,\n        \"user_id\": 2,\n        \"name\": \"Muhammad Abyan\",\n        \"email\": \"abyan@student.ac.id\",\n        \"status\": \"registered\",\n        \"registered_at\": \"2026-01-01 10:00:00\"\n      }\n    ]\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "List Participants - Participant Ditolak (403)",
+          "request": {
+            "method": "GET",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/events/{{event_id}}/participants",
+              "host": ["{{base_url}}"],
+              "path": ["api", "events", "{{event_id}}", "participants"]
+            },
+            "description": "GET /api/events/{id}/participants — participant, 403."
+          },
+          "response": [
+            {
+              "name": "Error 403",
+              "code": 403,
+              "status": "Forbidden",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Access denied: insufficient permissions\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update Status - Admin Sukses (200)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"attended\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/registrations/{{registration_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "registrations", "{{registration_id}}", "status"]
+            },
+            "description": "PATCH /api/registrations/{id}/status — admin only, 200."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Status updated successfully\",\n  \"data\": {\n    \"id\": 1,\n    \"event_id\": 1,\n    \"user_id\": 2,\n    \"status\": \"attended\",\n    \"registered_at\": \"2026-01-01 10:00:00\"\n  },\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Update Status - Status Invalid (422)",
+          "request": {
+            "method": "PATCH",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{admin_token}}" }
+            ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"status\": \"pending\"\n}"
+            },
+            "url": {
+              "raw": "{{base_url}}/api/registrations/{{registration_id}}/status",
+              "host": ["{{base_url}}"],
+              "path": ["api", "registrations", "{{registration_id}}", "status"]
+            },
+            "description": "PATCH /api/registrations/{id}/status — status tidak valid, 422."
+          },
+          "response": [
+            {
+              "name": "Error 422",
+              "code": 422,
+              "status": "Unprocessable Entity",
+              "body": "{\n  \"success\": false,\n  \"message\": \"Validation failed\",\n  \"data\": null,\n  \"errors\": {\n    \"status\": \"The status must be one of: registered, attended, canceled.\"\n  }\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Cancel Registration - Participant Sukses (200)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/registrations/{{registration_id}}",
+              "host": ["{{base_url}}"],
+              "path": ["api", "registrations", "{{registration_id}}"]
+            },
+            "description": "DELETE /api/registrations/{id} — participant membatalkan miliknya, 200."
+          },
+          "response": [
+            {
+              "name": "Success 200",
+              "code": 200,
+              "status": "OK",
+              "body": "{\n  \"success\": true,\n  \"message\": \"Registration canceled successfully\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        },
+        {
+          "name": "Cancel Registration - Bukan Miliknya (403)",
+          "request": {
+            "method": "DELETE",
+            "header": [
+              { "key": "Authorization", "value": "Bearer {{participant_token}}" }
+            ],
+            "url": {
+              "raw": "{{base_url}}/api/registrations/99999",
+              "host": ["{{base_url}}"],
+              "path": ["api", "registrations", "99999"]
+            },
+            "description": "DELETE /api/registrations/{id} — registration bukan milik participant (atau id tidak ada), 403/404."
+          },
+          "response": [
+            {
+              "name": "Error 403",
+              "code": 403,
+              "status": "Forbidden",
+              "body": "{\n  \"success\": false,\n  \"message\": \"You can only cancel your own registration\",\n  \"data\": null,\n  \"errors\": null\n}",
+              "_postman_previewlanguage": "json"
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

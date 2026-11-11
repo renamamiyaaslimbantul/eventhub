@@ -1,0 +1,21 @@
+# Backend — PHP / Composer
+vendor/
+*.log
+storage/logs/*.log
+
+# Environment
+.env
+.env.local
+.env.production
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Editor
+.vscode/
+.idea/
+*.swp
+
+# Build
+build/

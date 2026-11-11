@@ -19,3 +19,7 @@ npm-debug.log*
 Thumbs.db
 .vscode/
 .idea/
+
+# MD
+*.md
+!README.md
