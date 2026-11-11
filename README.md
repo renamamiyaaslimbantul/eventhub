@@ -1,7 +1,7 @@
 # EventHub
 
-**Event & Seminar Registration Hub** — Sistem pendaftaran event dan seminar kampus.
-Proyek mata kuliah **Pemrograman Web Dinamis 2026**.
+**Event & Seminar Registration Hub**
+Proyek mata kuliah **Pemrograman Web Dinamis 2026**
 
 ## Tentang Proyek
 
